@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Country Information</title>
+<style>
+    /* Add your custom styles here */
+</style>
+</head>
+<body>
+    <h1>Country Information</h1>
+    <label for="countryInput">Enter a country:</label>
+    <input type="text" id="countryInput">
+    <button onclick="fetchCountryInfo()">Submit</button>
+
+    <h2 id="countryName"></h2>
+    <p id="capital"></p>
+    <p id="population"></p>
+    <p id="region"></p>
+    <img id="flag" alt="Country flag" width="100">
+
+    <h3 id="borderingTitle"></h3>
+    <ul id="borderingCountries"></ul>
+
+    <script>
+        function fetchCountryInfo() {
+            var countryInput = document.getElementById('countryInput').value;
+            var countryName = document.getElementById('countryName');
+            var capital = document.getElementById('capital');
+            var population = document.getElementById('population');
+            var region = document.getElementById('region');
+            var flag = document.getElementById('flag');
+            var borderingTitle = document.getElementById('borderingTitle');
+            var borderingCountries = document.getElementById('borderingCountries');
+            
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function() {
+                if (this.readyState === 4) {
+                    if (this.status === 200) {
+                        var data = JSON.parse(this.responseText);
+
+                        if (data.status === 404) {
+                            countryName.textContent = 'Country not found';
+                            capital.textContent = '';
+                            population.textContent = '';
+                            region.textContent = '';
+                            flag.src = '';
+                            borderingTitle.textContent = '';
+                            borderingCountries.innerHTML = '';
+                        } else {
+                            var country = data[0];
+                            countryName.textContent = countryInput;
+                            capital.textContent = 'Capital: ' + country.capital;
+                            population.textContent = 'Population: ' + country.population;
+                            region.textContent = 'Region: ' + country.region;
+                            flag.src = country.flags.svg;
+
+                            if (country.borders.length > 0) {
+                                borderingTitle.textContent = 'Bordering Countries:';
+                                borderingCountries.innerHTML = '';
+                                for (var i = 0; i < country.borders.length; i++) {
+                                    var border = country.borders[i];
+                                    var borderRequest = new XMLHttpRequest();
+                                    borderRequest.onreadystatechange = function() {
+                                        if (this.readyState === 4 && this.status === 200) {
+                                            var borderData = JSON.parse(this.responseText);
+                                            var borderName = borderData[0].name;
+                                            var listItem = document.createElement('li');
+                                            var borderFlag = document.createElement('img');
+                                            borderFlag.src = borderData[0].flags.svg;
+                                            borderFlag.alt = borderName + ' flag';
+                                            borderFlag.width = 50;
+                                            listItem.textContent = borderName;
+                                            listItem.appendChild(borderFlag);
+                                            borderingCountries.appendChild(listItem);
+                                        }
+                                    };
+                                    borderRequest.open('GET', 'https://restcountries.com/v3.1/alpha/' + border, true);
+                                    borderRequest.send();
+                                }
+                            } else {
+                                borderingTitle.textContent = '';
+                                borderingCountries.innerHTML = '<p>No bordering countries found</p>';
+                            }
+                        }
+                    } else {
+                        countryName.textContent = 'Error fetching country information. Please try again.';
+                        capital.textContent = '';
+                        population.textContent = '';
+                        region.textContent = '';
+                        flag.src = '';
+                        borderingTitle.textContent = '';
+                        borderingCountries.innerHTML = '';
+                    }
+                }
+            };
+            request.open('GET', 'https://restcountries.com/v3.1/name/' + countryInput, true);
+            request.send();
+        }
+    </script>
+</body>
+</html>
